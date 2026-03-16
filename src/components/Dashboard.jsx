@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { INSTANCES, fetchInstanceStats, formatCurrency } from '../lib/frappe';
 import Logo from './Logo';
@@ -91,7 +92,7 @@ export default function Dashboard({ user, onLogout }) {
         <div className={styles.sidebarFooter}>
           <div className={styles.userBadge}>
             <span className={styles.userDot} />
-            <span className={styles.userName} title={user}>{user}</span>
+            <span className={styles.userName} title={user?.fullname}>{user?.fullname || 'مستخدم'}</span>
           </div>
           <button className={styles.logoutBtn} onClick={onLogout} title="خروج">⏻</button>
         </div>

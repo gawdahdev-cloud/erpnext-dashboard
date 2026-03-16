@@ -1,25 +1,23 @@
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import Logo from './Logo';
-import { loginWithCentre, CENTRE_INSTANCE } from '../lib/frappe';
+import { login, CENTRE_INSTANCE, INSTANCES } from '../lib/frappe';
 import styles from './Login.module.css';
 
-export default function Login({ onLogin }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error,    setError]    = useState('');
-  const [loading,  setLoading]  = useState(false);
+export default function Login() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!username || !password) { setError('أدخل اسم المستخدم وكلمة المرور'); return; }
+  const handleLogin = async () => {
     setLoading(true);
     setError('');
     try {
-      const user = await loginWithCentre(username, password);
-      onLogin(user || username);
+      // ✨ بدء عملية تسجيل الدخول عبر OAuth
+      // سيتم إعادة توجيه المستخدم، لذلك لن يصل الكود إلى ما بعد هذا السطر
+      login();
     } catch (err) {
-      setError('بيانات الدخول غلط أو تحقق من الاتصال بالمركز');
-    } finally {
+      console.error(err);
+      setError('فشل بدء عملية تسجيل الدخول. تأكد من صحة إعدادات OAUTH_CLIENT_ID.');
       setLoading(false);
     }
   };
@@ -45,54 +43,34 @@ export default function Login({ onLogin }) {
         {/* Instance badge */}
         <div className={styles.instanceBadge}>
           <span className={styles.instanceDot} />
-          <span>تسجيل الدخول عبر: <strong>المركز</strong></span>
+          <span>تسجيل الدخول عبر: <strong>{CENTRE_INSTANCE?.name || 'المركز'}</strong></span>
           <span className={styles.instanceUrl}>{CENTRE_INSTANCE?.url?.replace('https://', '')}</span>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label className={styles.label}>اسم المستخدم أو البريد الإلكتروني</label>
-            <input
-              className={styles.input}
-              placeholder="admin@svu.edu.eg"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              autoComplete="username"
-              dir="ltr"
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label}>كلمة المرور</label>
-            <input
-              type="password"
-              className={styles.input}
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
-
+        {/* Login Button */}
+        <div className={styles.form}>
           {error && (
             <div className={styles.error}>
               <span>⚠️</span> {error}
             </div>
           )}
 
-          <button type="submit" className={styles.btn} disabled={loading}>
+          <button onClick={handleLogin} className={styles.btn} disabled={loading}>
             {loading
-              ? <><span className={styles.spinner} /> جاري التحقق...</>
-              : <><span>دخول</span><span className={styles.arrow}>←</span></>
+              ? <><span className={styles.spinner} /> جاري التوجيه...</>
+              : <><span>تسجيل الدخول الآمن</span><span className={styles.arrow}>→</span></>
             }
           </button>
-        </form>
+          <p className={styles.infoText}>
+            سيتم توجيهك إلى صفحة تسجيل الدخول الرسمية الخاصة بالمركز لإتمام العملية بأمان.
+          </p>
+        </div>
 
         {/* Instances preview */}
         <div className={styles.footer}>
-          <p className={styles.footerLabel}>صلاحية الوصول لـ 8 مؤسسات</p>
+          <p className={styles.footerLabel}>صلاحية الوصول لـ {INSTANCES.length} مؤسسات</p>
           <div className={styles.dots}>
-            {(typeof __INSTANCES__ !== 'undefined' ? __INSTANCES__ : []).map(inst => (
+            {INSTANCES.map(inst => (
               <div
                 key={inst.id}
                 className={styles.dot}

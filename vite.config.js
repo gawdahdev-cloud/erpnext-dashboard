@@ -1,6 +1,7 @@
 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // =====================================================
 // ⬇️ انسخ Client ID الذي حصلت عليه من Frappe Connected App هنا
@@ -92,7 +93,10 @@ function buildProxy() {
 }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({ open: true, filename: 'stats.html' }), // ✨ إضافة أداة تحليل الحجم
+  ],
   server: {
     port: 3000,
     proxy: buildProxy(),
@@ -110,5 +114,17 @@ export default defineConfig({
       }))
     ),
     __OAUTH_CLIENT_ID__: JSON.stringify(OAUTH_CLIENT_ID),
+  },
+
+  // ✨ تحسينات الأداء التي اقترحتها
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // فصل المكتبات الأساسية في ملف منفصل
+          vendor: ['react', 'react-dom', 'frappe-js-sdk'],
+        },
+      },
+    },
   },
 })
