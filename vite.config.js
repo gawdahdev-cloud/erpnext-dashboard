@@ -105,11 +105,12 @@ export default defineConfig({
   // نمرر البيانات الآمنة فقط للـ React app
   define: {
     __INSTANCES__: JSON.stringify(
-      INSTANCES.map(({ id, name, shortName, color }) => ({
+      INSTANCES.map(({ id, name, shortName, color, url }) => ({
         id,
         name,
         shortName,
         color,
+        url, // Make the URL available to the frontend
         proxyBase: `/proxy/${id}`,
       }))
     ),
