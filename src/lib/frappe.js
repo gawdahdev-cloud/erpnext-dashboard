@@ -28,6 +28,20 @@ export function initFrappe() {
     useToken: true,
     // لا نمرر أي token هنا، الـ SDK سيتولى عملية OAuth
   });
+
+  // Polyfill isLoggedIn for compatibility with older SDK version
+  const auth = frappe.auth();
+  if (typeof auth.isLoggedIn !== 'function') {
+    auth.isLoggedIn = async () => {
+      try {
+        await auth.getLoggedInUser();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+  }
+
   return frappe;
 }
 
