@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer';
 
 // =====================================================
-// ⬇️ انسخ Client ID الذي حصلت عليه من Frappe Connected App هنا
+// ⬇️ Client ID مأخوذ من Frappe Connected App
 // =====================================================
-export const OAUTH_CLIENT_ID = 'الرجاء إدخال Client ID هنا';
+export const OAUTH_CLIENT_ID = 'imato28rlj';
 
 // =====================================================
 // قائمة الـ instances (بدون أي بيانات سرية)
