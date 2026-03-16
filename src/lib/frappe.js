@@ -41,12 +41,15 @@ export function login() {
     throw new Error("OAUTH_CLIENT_ID غير صحيح في vite.config.js");
   }
 
-  const auth = frappe.auth();
-  auth.loginWithOAuth({ 
-    clientId: OAUTH_CLIENT_ID,
-    redirectUri: window.location.origin, // سيعود المستخدم إلى الصفحة الرئيسية
-    scopes: 'all' // يمكنك تحديد الصلاحيات المطلوبة هنا
+  const redirectParams = new URLSearchParams({
+    client_id: OAUTH_CLIENT_ID,
+    redirect_uri: window.location.origin,
+    response_type: 'code',
+    scope: 'all',
   });
+
+  const authorizationUrl = `${CENTRE_INSTANCE.url}/api/method/frappe.integrations.oauth2.authorize?${redirectParams}`;
+  window.location.href = authorizationUrl;
 }
 
 /**
@@ -137,8 +140,8 @@ export async function fetchInstanceStats(instance) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, data]) => ({
       month: new Date(month + '-01').toLocaleDateString('ar-EG', { month: 'short' }),
-      مبيعات: Math.round(data.sales),
-      مشتريات: Math.round(data.purchase),
+      'مبيعات': Math.round(data.sales),
+      'مشتريات': Math.round(data.purchase),
     }));
 
   return {
