@@ -190,6 +190,46 @@
   display: inline-block;
 }
 
+.devNotice {
+  margin-top: 16px;
+  background: rgba(54, 181, 74, 0.06);
+  border: 1px solid rgba(54, 181, 74, 0.2);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.devNoticeTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #36B54A;
+}
+.devNoticeText {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.5;
+}
+.devNoticeText code {
+  background: rgba(255,255,255,0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: Monaco, monospace;
+  color: rgba(255,255,255,0.7);
+  font-size: 11px;
+}
+.devCode {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #36B54A;
+  font-family: Monaco, monospace;
+  word-break: break-all;
+  display: block;
+}
+
 .helpBox {
   margin-top: 24px;
   background: rgba(39, 173, 225, 0.06);

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { FrappeApp } from 'frappe-js-sdk';
-import { formatCurrency } from '../lib/frappe';
+import { createFrappe, formatCurrency } from '../lib/frappe';
 import Logo from './Logo';
 import CompanyCard from './CompanyCard';
 import CompanyDetail from './CompanyDetail';
@@ -17,11 +17,7 @@ export default function Dashboard({ config, onDisconnect }) {
 
   // إنشاء الـ frappe instance من الـ config
   const getFrappe = useCallback(() => {
-    return new FrappeApp(config.url, {
-      useToken: true,
-      token: () => `token ${config.apiKey}:${config.apiSecret}`,
-      type: 'token',
-    });
+    return createFrappe(config);
   }, [config]);
 
   useEffect(() => {

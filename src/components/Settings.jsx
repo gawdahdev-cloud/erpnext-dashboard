@@ -10,13 +10,14 @@ export default function Settings({ onSave }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // تحميل الإعدادات المحفوظة
     const saved = localStorage.getItem('erp_config');
     if (saved) {
-      const config = JSON.parse(saved);
-      setUrl(config.url || '');
-      setApiKey(config.apiKey || '');
-      setApiSecret(config.apiSecret || '');
+      try {
+        const config = JSON.parse(saved);
+        setUrl(config.url || '');
+        setApiKey(config.apiKey || '');
+        setApiSecret(config.apiSecret || '');
+      } catch {}
     }
   }, []);
 
@@ -29,12 +30,15 @@ export default function Settings({ onSave }) {
     setLoading(true);
     setError('');
     try {
-      // حفظ الإعدادات
-      const config = { url: url.replace(/\/$/, ''), apiKey, apiSecret };
+      const cleanUrl = url.replace(/\/$/, '');
+      const config = { url: cleanUrl, apiKey, apiSecret };
+
+      // ⚠️ تنبيه: في الـ dev mode لازم تحط الـ URL في vite.config.js
+      // في الـ production هنستخدم الـ URL مباشرة
       localStorage.setItem('erp_config', JSON.stringify(config));
       onSave(config);
     } catch (err) {
-      setError('فشل الاتصال. تحقق من البيانات وتأكد من تفعيل CORS على الـ ERPNext.');
+      setError('حدث خطأ. تحقق من البيانات.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +46,6 @@ export default function Settings({ onSave }) {
 
   return (
     <div className={styles.page}>
-      {/* Background decoration */}
       <div className={styles.bgDecor}>
         <div className={styles.circle1}></div>
         <div className={styles.circle2}></div>
@@ -50,7 +53,6 @@ export default function Settings({ onSave }) {
       </div>
 
       <div className={styles.card}>
-        {/* Logo & Title */}
         <div className={styles.header}>
           <Logo size={64} />
           <div>
@@ -63,7 +65,7 @@ export default function Settings({ onSave }) {
 
         <h2 className={styles.formTitle}>إعداد الاتصال بـ ERPNext</h2>
         <p className={styles.formDesc}>
-          أدخل بيانات الـ API Key الخاصة بك للاتصال بنظام الـ ERP
+          أدخل بيانات الـ API Key للاتصال بنظام الـ ERP
         </p>
 
         <form onSubmit={handleConnect} className={styles.form}>
@@ -113,10 +115,24 @@ export default function Settings({ onSave }) {
           </button>
         </form>
 
+        {/* Dev mode notice */}
+        <div className={styles.devNotice}>
+          <p className={styles.devNoticeTitle}>⚙️ تشغيل محلي (Dev Mode)</p>
+          <p className={styles.devNoticeText}>
+            افتح <code>vite.config.js</code> وحط رابطك في:
+          </p>
+          <code className={styles.devCode}>
+            {`const ERP_URL = '${url || 'https://your-erp.frappe.cloud'}'`}
+          </code>
+          <p className={styles.devNoticeText}>
+            ده بيحل مشكلة CORS تلقائياً بدون أي إعدادات على السيرفر ✅
+          </p>
+        </div>
+
         <div className={styles.helpBox}>
           <p className={styles.helpTitle}>كيف تحصل على API Key؟</p>
           <ol className={styles.helpList}>
-            <li>افتح الـ ERPNext → Settings → My Profile</li>
+            <li>افتح ERPNext → Settings → My Profile</li>
             <li>اذهب إلى قسم "API Access"</li>
             <li>اضغط "Generate Keys"</li>
             <li>انسخ الـ API Key والـ API Secret</li>
