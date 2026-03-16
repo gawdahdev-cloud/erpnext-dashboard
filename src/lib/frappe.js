@@ -1,87 +1,124 @@
+
 import { FrappeApp } from 'frappe-js-sdk';
 
 // ================================================================
-// الـ instances بتيجي من vite.config.js عبر define
-// كل instance ليه proxyBase خاص بيه:
-//   centre   → /proxy/centre/api/...
-//   pharma   → /proxy/pharma/api/...
+//  ⬇️ البيانات التالية يتم تمريرها من vite.config.js
 // ================================================================
 export const INSTANCES = typeof __INSTANCES__ !== 'undefined' ? __INSTANCES__ : [];
+export const OAUTH_CLIENT_ID = typeof __OAUTH_CLIENT_ID__ !== 'undefined' ? __OAUTH_CLIENT_ID__ : '';
 
 // instance المركز دايمًا أول واحد في القائمة
 export const CENTRE_INSTANCE = INSTANCES.find(i => i.id === 'centre') || INSTANCES[0];
 
+// ================================================================
+// 🚀 إعداد Frappe App مركزي باستخدام OAuth 2.0
+// ================================================================
+
+let frappe;
+
 /**
- * بيعمل FrappeApp لـ instance معين
- * baseUrl = الـ proxy prefix — بيحل CORS تلقائياً
+ * تهيئة الـ Frappe App المركزي. يجب استدعاؤها مرة واحدة عند بدء تشغيل التطبيق.
  */
-export function makeFrappe(instance) {
-  const baseUrl = `${window.location.origin}${instance.proxyBase}`;
-  return new FrappeApp(baseUrl, {
+export function initFrappe() {
+  if (!CENTRE_INSTANCE) {
+    console.error("لم يتم العثور على instance المركز");
+    return;
+  }
+  frappe = new FrappeApp(CENTRE_INSTANCE.url, {
     useToken: true,
-    token: () => `token ${instance.apiKey}:${instance.apiSecret}`,
-    type: 'token',
+    // لا نمرر أي token هنا، الـ SDK سيتولى عملية OAuth
+  });
+  return frappe;
+}
+
+/**
+ * يبدأ عملية تسجيل الدخول عبر OAuth.
+ * سيقوم بإعادة توجيه المستخدم إلى صفحة تسجيل الدخول في Frappe.
+ */
+export function login() {
+  if (!frappe) throw new Error("Frappe App لم يتم تهيئتها");
+  if (!OAUTH_CLIENT_ID || OAUTH_CLIENT_ID.includes('الرجاء إدخال')) {
+    throw new Error("OAUTH_CLIENT_ID غير صحيح في vite.config.js");
+  }
+
+  const auth = frappe.auth();
+  auth.loginWithOAuth({ 
+    clientId: OAUTH_CLIENT_ID,
+    redirectUri: window.location.origin, // سيعود المستخدم إلى الصفحة الرئيسية
+    scopes: 'all' // يمكنك تحديد الصلاحيات المطلوبة هنا
   });
 }
 
 /**
- * Login بـ username/password على المركز
- * بيرجع الـ user object لو نجح أو بيرمي error
+ * معالجة إعادة التوجيه بعد تسجيل الدخول.
+ * يجب استدعاؤها في الصفحة الرئيسية للتحقق مما إذا كان المستخدم عائداً من Frappe.
+ * @returns {Promise<boolean>} - `true` إذا تمت معالجة تسجيل الدخول بنجاح
  */
-export async function loginWithCentre(username, password) {
-  const baseUrl = `${window.location.origin}${CENTRE_INSTANCE.proxyBase}`;
-  const frappe = new FrappeApp(baseUrl);
-  const authApi = frappe.auth();
-  await authApi.loginWithUsernamePassword({ username, password });
-  const user = await authApi.getLoggedInUser();
-  return user;
+export async function handleLoginRedirect() {
+  if (!frappe) throw new Error("Frappe App لم يتم تهيئتها");
+  // سيقوم الـ SDK تلقائياً بالتحقق من وجود authorization_code في الـ URL
+  // وتبادله بـ access_token إذا وجد.
+  const loggedIn = await frappe.auth().isLoggedIn();
+  return loggedIn;
 }
 
 /**
- * Logout من المركز
+ * تسجيل الخروج.
  */
-export async function logoutFromCentre() {
-  const baseUrl = `${window.location.origin}${CENTRE_INSTANCE.proxyBase}`;
-  const frappe = new FrappeApp(baseUrl);
+export async function logout() {
+  if (!frappe) throw new Error("Frappe App لم يتم تهيئتها");
   await frappe.auth().logout();
+  window.location.href = window.location.origin; // إعادة توجيه للصفحة الرئيسية
 }
 
 /**
- * جلب إحصائيات instance واحد
+ * الحصول على كائن Frappe App المهيأ.
+ */
+export function getFrappe() {
+  if (!frappe) throw new Error("Frappe App لم يتم تهيئتها");
+  return frappe;
+}
+
+/**
+ * جلب إحصائيات instance واحد.
+ * يستخدم الآن الـ token الآمن الذي تم الحصول عليه عبر OAuth.
  */
 export async function fetchInstanceStats(instance) {
-  const frappe = makeFrappe(instance);
-  const db = frappe.db();
+  const mainFrappe = getFrappe();
+  const loggedIn = await mainFrappe.auth().isLoggedIn();
+  if (!loggedIn) throw new Error("المستخدم غير مسجل دخوله");
+
+  // إنشاء FrappeApp مؤقت للـ instance المطلوب
+  const instanceFrappe = new FrappeApp(instance.proxyBase, {
+    useToken: true,
+    // نستخدم نفس الـ token الذي حصلنا عليه من تسجيل الدخول المركزي
+    token: () => mainFrappe.auth().getToken(),
+    type: 'Bearer', // OAuth يستخدم Bearer tokens
+  });
+
+  const db = instanceFrappe.db();
   const year = new Date().getFullYear();
   const startOfYear = `${year}-01-01`;
 
   const [salesInvoices, purchaseInvoices] = await Promise.all([
     db.getDocList('Sales Invoice', {
-      filters: [
-        ['docstatus', '=', 1],
-        ['posting_date', '>=', startOfYear],
-      ],
+      filters: [ ['docstatus', '=', 1], ['posting_date', '>=', startOfYear], ],
       fields: ['name', 'grand_total', 'outstanding_amount', 'status', 'posting_date', 'customer_name'],
       orderBy: { field: 'posting_date', order: 'desc' },
       limit: 500,
     }),
     db.getDocList('Purchase Invoice', {
-      filters: [
-        ['docstatus', '=', 1],
-        ['posting_date', '>=', startOfYear],
-      ],
+      filters: [ ['docstatus', '=', 1], ['posting_date', '>=', startOfYear], ],
       fields: ['name', 'grand_total', 'outstanding_amount', 'status', 'posting_date', 'supplier_name'],
       orderBy: { field: 'posting_date', order: 'desc' },
       limit: 500,
     }),
   ]);
 
-  const totalSales     = salesInvoices.reduce((s, i) => s + (i.grand_total || 0), 0);
-  const totalPurchase  = purchaseInvoices.reduce((s, i) => s + (i.grand_total || 0), 0);
-  const paidSales      = salesInvoices.filter(i => i.status === 'Paid')
-                                      .reduce((s, i) => s + (i.grand_total || 0), 0);
+  const totalSales = salesInvoices.reduce((s, i) => s + (i.grand_total || 0), 0);
+  const totalPurchase = purchaseInvoices.reduce((s, i) => s + (i.grand_total || 0), 0);
+  const paidSales = salesInvoices.filter(i => i.status === 'Paid').reduce((s, i) => s + (i.grand_total || 0), 0);
 
-  // تجميع شهري
   const monthlyMap = {};
   for (const inv of salesInvoices) {
     if (!inv.posting_date) continue;
@@ -110,10 +147,10 @@ export async function fetchInstanceStats(instance) {
     totalSales,
     totalPurchase,
     paidSales,
-    salesCount:       salesInvoices.length,
-    purchaseCount:    purchaseInvoices.length,
-    netProfit:        totalSales - totalPurchase,
-    collectionRate:   totalSales > 0 ? Math.round((paidSales / totalSales) * 100) : 0,
+    salesCount: salesInvoices.length,
+    purchaseCount: purchaseInvoices.length,
+    netProfit: totalSales - totalPurchase,
+    collectionRate: totalSales > 0 ? Math.round((paidSales / totalSales) * 100) : 0,
     monthlyData,
   };
 }

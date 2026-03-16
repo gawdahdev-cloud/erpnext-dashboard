@@ -1,8 +1,14 @@
+
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // =====================================================
-// ⬇️  ضع API Key و Secret لكل instance هنا
+// ⬇️ انسخ Client ID الذي حصلت عليه من Frappe Connected App هنا
+// =====================================================
+export const OAUTH_CLIENT_ID = 'الرجاء إدخال Client ID هنا';
+
+// =====================================================
+// قائمة الـ instances (بدون أي بيانات سرية)
 // =====================================================
 export const INSTANCES = [
   {
@@ -10,8 +16,6 @@ export const INSTANCES = [
     name: 'المركز',
     shortName: 'المركز',
     url: 'https://Qu-centre.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#27ADE1',
   },
   {
@@ -19,8 +23,6 @@ export const INSTANCES = [
     name: 'كلية الصيدلة',
     shortName: 'الصيدلة',
     url: 'https://Qu-Pharma.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#36B54A',
   },
   {
@@ -28,8 +30,6 @@ export const INSTANCES = [
     name: 'كلية الإعلام',
     shortName: 'الإعلام',
     url: 'https://Qu-media.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#7c3aed',
   },
   {
@@ -37,8 +37,6 @@ export const INSTANCES = [
     name: 'كلية الطب',
     shortName: 'الطب',
     url: 'https://Qu-medicine.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#e11d48',
   },
   {
@@ -46,8 +44,6 @@ export const INSTANCES = [
     name: 'كلية علوم الرياضة',
     shortName: 'الرياضة',
     url: 'https://Qu-sposci.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#ea580c',
   },
   {
@@ -55,8 +51,6 @@ export const INSTANCES = [
     name: 'كلية العلوم',
     shortName: 'العلوم',
     url: 'https://Qu-science.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#0891b2',
   },
   {
@@ -64,8 +58,6 @@ export const INSTANCES = [
     name: 'كلية طب الأسنان',
     shortName: 'الأسنان',
     url: 'https://Qu-dental.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#be185d',
   },
   {
@@ -73,8 +65,6 @@ export const INSTANCES = [
     name: 'كلية العلاج الطبيعي',
     shortName: 'العلاج الطبيعي',
     url: 'https://Qu-pt.svu.edu.eg',
-    apiKey: 'YOUR_API_KEY',
-    apiSecret: 'YOUR_API_SECRET',
     color: '#15803d',
   },
 ]
@@ -82,7 +72,6 @@ export const INSTANCES = [
 // =====================================================
 // بيبني proxy entry لكل instance:
 //   /proxy/centre/api/...  →  https://Qu-centre.svu.edu.eg/api/...
-//   /proxy/pharma/api/...  →  https://Qu-Pharma.svu.edu.eg/api/...
 // =====================================================
 function buildProxy() {
   const proxy = {}
@@ -109,18 +98,17 @@ export default defineConfig({
     proxy: buildProxy(),
   },
 
-  // نمرر بيانات الـ instances للـ React app (بدون secrets)
+  // نمرر البيانات الآمنة فقط للـ React app
   define: {
     __INSTANCES__: JSON.stringify(
-      INSTANCES.map(({ id, name, shortName, color, apiKey, apiSecret }) => ({
+      INSTANCES.map(({ id, name, shortName, color }) => ({
         id,
         name,
         shortName,
         color,
-        apiKey,
-        apiSecret,
         proxyBase: `/proxy/${id}`,
       }))
     ),
+    __OAUTH_CLIENT_ID__: JSON.stringify(OAUTH_CLIENT_ID),
   },
 })
