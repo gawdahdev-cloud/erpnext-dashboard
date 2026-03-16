@@ -1,34 +1,31 @@
 import { useState, useEffect } from 'react';
-import Settings from './components/Settings';
+import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 
 export default function App() {
-  const [config, setConfig] = useState(null);
+  const [user, setUser]       = useState(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // تحميل الإعدادات المحفوظة
-    const saved = localStorage.getItem('erp_config');
-    if (saved) {
-      try {
-        setConfig(JSON.parse(saved));
-      } catch {
-        localStorage.removeItem('erp_config');
-      }
-    }
+    // لو في session محفوظة نروح للداشبورد مباشرة
+    const saved = sessionStorage.getItem('erp_user');
+    if (saved) setUser(saved);
+    setChecking(false);
   }, []);
 
-  const handleSave = (cfg) => {
-    setConfig(cfg);
+  const handleLogin = (username) => {
+    sessionStorage.setItem('erp_user', username);
+    setUser(username);
   };
 
-  const handleDisconnect = () => {
-    localStorage.removeItem('erp_config');
-    setConfig(null);
+  const handleLogout = () => {
+    sessionStorage.removeItem('erp_user');
+    setUser(null);
   };
 
-  if (!config) {
-    return <Settings onSave={handleSave} />;
-  }
+  if (checking) return null;
 
-  return <Dashboard config={config} onDisconnect={handleDisconnect} />;
+  return user
+    ? <Dashboard user={user} onLogout={handleLogout} />
+    : <Login onLogin={handleLogin} />;
 }
